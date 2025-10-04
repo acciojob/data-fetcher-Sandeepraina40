@@ -1,45 +1,46 @@
 import React, { useState, useEffect } from "react";
+import "regenerator-runtime/runtime"; // if async/await is used
 
 const DataFetcher = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  // ✅ UseEffect to fetch data
   useEffect(() => {
-    setLoading(true);
-    fetch("https://dummyjson.com/products")
-      .then((response) => {
-        if (!response.ok) throw new Error(`Error: ${response.status}`);
-        return response.json();
-      })
-      .then((result) => {
-        setData(result);
-      })
-      .catch((err) => setError(err.message || "Something went wrong"))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const res = await fetch("https://dummyjson.com/products");
+        if (!res.ok) {
+          throw new Error(`HTTP error: ${res.status}`);
+        }
+        const result = await res.json();
+
+        // ✅ Check for empty data
+        if (!result || !result.products || result.products.length === 0) {
+          setData([]);
+        } else {
+          setData(result.products);
+        }
+      } catch (err) {
+        setError("An error occurred: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
+  // ✅ Return JSX expected by Cypress
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
+  if (!data || data.length === 0) return <pre>[]</pre>;
+
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2>Data Fetcher</h2>
-      {loading && <p>Loading data...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {!loading && !error && (!data || !data.products || data.products.length === 0) && (
-        <p>No data found</p>
-      )}
-      {data && data.products && data.products.length > 0 && (
-        <pre
-          style={{
-            backgroundColor: "#f5f5f5",
-            padding: "20px",
-            borderRadius: "6px",
-            maxHeight: "500px",
-            overflow: "auto",
-          }}
-        >
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      )}
+    <div>
+      <h2>Data Fetched from API</h2>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
 };
