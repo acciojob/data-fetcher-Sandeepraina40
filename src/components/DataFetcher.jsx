@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import "regenerator-runtime/runtime"; // if async/await is used
+import "regenerator-runtime/runtime";
 
 const DataFetcher = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // ✅ UseEffect to fetch data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -14,13 +13,14 @@ const DataFetcher = () => {
         if (!res.ok) {
           throw new Error(`HTTP error: ${res.status}`);
         }
+
         const result = await res.json();
 
-        // ✅ Check for empty data
-        if (!result || !result.products || result.products.length === 0) {
+        // ✅ Save the full JSON object, not just products
+        if (!result || Object.keys(result).length === 0) {
           setData([]);
         } else {
-          setData(result.products);
+          setData(result);
         }
       } catch (err) {
         setError("An error occurred: " + err.message);
@@ -32,10 +32,9 @@ const DataFetcher = () => {
     fetchData();
   }, []);
 
-  // ✅ Return JSX expected by Cypress
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
-  if (!data || data.length === 0) return <pre>[]</pre>;
+  if (!data || (Array.isArray(data) && data.length === 0)) return <pre>[]</pre>;
 
   return (
     <div>
